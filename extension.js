@@ -1,7 +1,3 @@
-/*
-    extensie activeren met gnome tweaks
-    na elke wijziging ctrl+f2 en vervolgens r en enter indrukken om wijzigingen te zien.
-*/
 const St = imports.gi.St;
 const Clutter = imports.gi.Clutter;
 const Main = imports.ui.main;
@@ -10,27 +6,69 @@ const GLib = imports.gi.GLib;
 const Lang = imports.lang;
 
 
-let text, button,binaryCalc,dateMenu,updateClockId,tz,date,strHour,strMinute,strSeconds,context,size,width,height,arcwidth,archeight,radius,spacing;
+let button,binaryCalc,dateMenu,updateClockId,tz,date,strHour,strMinute,strSeconds,context,size,width,height,arcwidth,archeight,radius,spacing,repaintConnection;
 
-function _showHello() {
+function _triggerRepaint() {
     binaryCalc.queue_repaint()
 }
 
-function getCircle(x,y,time) {
-  return {x: 2,y: 2,r: 5  };
+/* makes sure the number get's a 0 prepended if it's only a single digit */ 
+function _doubleDigitTime(num){
+  if(num.toString().length == 1){
+    return "0"+num.toString()
+  }
+  else {
+    return num.toString()
+  }
 }
 
+/* returns the binary representation of a number */
+function _getBinary(num) {
+      if(num == 0) {
+        return { eight: 0, four: 0,two: 0,one: 0 }
+      }
+      if (num == 1) {
+        return { eight: 0, four: 0,two: 0,one: 1 }
+      }
+       if (num == 2) {
+        return { eight: 0, four: 0,two: 1,one: 0 }
+      }
+       if (num == 3) {
+        return { eight: 0, four: 0,two: 1,one: 1 }
+      }
+       if (num == 4) {
+        return { eight: 0, four: 1,two: 0,one: 0 }
+      }
+       if (num == 5) {
+        return { eight: 0, four: 1,two: 0,one: 1 }
+      }
+       if (num == 6) {
+        return { eight: 0, four: 1,two: 1,one: 0 }
+      }
+       if (num == 7) {
+        return { eight: 0, four: 1,two: 1,one: 1 }
+      }
+       if (num == 8) {
+        return { eight: 1, four: 0,two: 0,one: 0 }
+      }
+       if (num == 9) {
+        return { eight: 1, four: 0,two: 0,one: 1 }
+      }
+      else
+      {
+       return { eight: 1, four: 0,two: 0,one: 1 }
+      }
+}
+
+/*This should happen on every clock update (and coincidentally on every gnome overview invocation */
 function _repaintevent(stdrawingarea,user_data) {
 
-      if(!tz) {
-        tz = dateMenu._clock.get_timezone();
-      }
+      tz = dateMenu._clock.get_timezone();
       date = GLib.DateTime.new_now(tz);
       strHour = date.get_hour();
       strMinute = date.get_minute();
       strSeconds = date.get_second();
-
-
+      
       context = stdrawingarea.get_context();
       size = stdrawingarea.get_surface_size();
       width = size[0];
@@ -41,101 +79,145 @@ function _repaintevent(stdrawingarea,user_data) {
       radius = arcwidth / 2 ;
       spacing = 5;
       context.setSourceRGB(.6,.6,.6);
-      /*arc(xc, yc, radius, angle1, angle2)*/
-      context.arc(radius, archeight + radius, radius, 0, 4 * Math.PI);
-      context.fill();
-      context.arc(radius, 2*archeight + radius, radius, 0, 4 * Math.PI);
-      context.fill();
-      context.arc(radius, 3*archeight + radius, radius, 0, 4 * Math.PI);
-      context.fill();
-      context.arc(radius + arcwidth+ spacing, radius, radius, 0, 4 * Math.PI);
-      context.fill();
-      context.arc(radius + arcwidth+ spacing, archeight + radius, radius, 0, 4 * Math.PI);
-      context.fill();
-      context.arc(radius + arcwidth+ spacing, 2*archeight + radius, radius, 0, 4 * Math.PI);
-      context.fill();
-      if( date.get_second() % 2 === 0) {
-      context.setSourceRGB(1,1,1);
-      context.arc(radius + arcwidth+ spacing, 3*archeight + radius, radius, 0, 4 * Math.PI);
-      context.fill();
-      context.setSourceRGB(.6,.6,.6);
-      }
-      else {
-        context.arc(radius + arcwidth+ spacing, 3*archeight + radius, radius, 0, 4 * Math.PI);
-        context.fill();
+      
+      let digit = _getBinary(parseInt(_doubleDigitTime(strHour).charAt(0)));
+      var i = 0;
+      for(var x in digit)
+      {
+          if(digit[x] == 1) {
+          context.setSourceRGB(1,1,1);
+          context.arc(radius, i*archeight + radius, radius, 0, 4 * Math.PI);
+          context.fill();
+          context.setSourceRGB(.6,.6,.6);
+          }
+          else {
+            context.arc(radius, i*archeight + radius, radius, 0, 4 * Math.PI);
+            context.fill();
+          }
+          i++;
       }
       
-      //context.arc(radius + arcwidth * 2+ spacing + spacing, radius, radius, 0, 4 * Math.PI);
-      //context.fill();
-      context.arc(radius + arcwidth * 2+ spacing + spacing, archeight + radius, radius, 0, 4 * Math.PI);
-      context.fill();
-      context.arc(radius + arcwidth * 2+ spacing + spacing, 2*archeight + radius, radius, 0, 4 * Math.PI);
-      context.fill();
-      context.arc(radius + arcwidth * 2+ spacing + spacing, 3*archeight + radius, radius, 0, 4 * Math.PI);
-      context.fill();
+      digit = _getBinary(parseInt(_doubleDigitTime(strHour).charAt(1)));
+      i = 0;
+      for(var x in digit)
+      {
+          if(digit[x] == 1) {
+          context.setSourceRGB(1,1,1);
+          context.arc(radius + arcwidth+ spacing, i*archeight + radius, radius, 0, 4 * Math.PI);
+          context.fill();
+          context.setSourceRGB(.6,.6,.6);
+          }
+          else {
+            context.arc(radius + arcwidth+ spacing, i*archeight + radius, radius, 0, 4 * Math.PI);
+            context.fill();
+          }
+          i++;
+      }
       
-      context.arc(radius + arcwidth * 3+ spacing + spacing+ spacing, radius, radius, 0, 4 * Math.PI);
-      context.fill();
-      context.arc(radius + arcwidth * 3+ spacing+ spacing+ spacing, archeight + radius, radius, 0, 4 * Math.PI);
-      context.fill();
-      context.arc(radius + arcwidth * 3+ spacing+ spacing+ spacing, 2*archeight + radius, radius, 0, 4 * Math.PI);
-      context.fill();
-      context.arc(radius + arcwidth * 3+ spacing+ spacing+ spacing, 3*archeight + radius, radius, 0, 4 * Math.PI);
-      context.fill();
-      
-      //context.arc(radius + arcwidth * 4+ spacing+ spacing+ spacing+ spacing, radius, radius, 0, 4 * Math.PI);
-      //context.fill();
-      context.arc(radius + arcwidth * 4+ spacing+ spacing+ spacing+ spacing, archeight + radius, radius, 0, 4 * Math.PI);
-      context.fill();
-      context.arc(radius + arcwidth * 4+ spacing+ spacing+ spacing+ spacing, 2*archeight + radius, radius, 0, 4 * Math.PI);
-      context.fill();
-      context.arc(radius + arcwidth * 4+ spacing+ spacing+ spacing+ spacing, 3*archeight + radius, radius, 0, 4 * Math.PI);
-      context.fill();
-      
-      context.arc(radius + arcwidth * 5+ spacing+ spacing+ spacing+ spacing+ spacing, radius, radius, 0, 4 * Math.PI);
-      context.fill();
-      context.arc(radius + arcwidth * 5+ spacing+ spacing+ spacing+ spacing+ spacing, archeight + radius, radius, 0, 4 * Math.PI);
-      context.fill();
-      context.arc(radius + arcwidth * 5+ spacing+ spacing+ spacing+ spacing+ spacing, 2*archeight + radius, radius, 0, 4 * Math.PI);
-      context.fill();
-      context.arc(radius + arcwidth * 5+ spacing+ spacing+ spacing+ spacing+ spacing, 3*archeight + radius, radius, 0, 4 * Math.PI);
-      context.fill();
+      digit = _getBinary(parseInt(_doubleDigitTime(strMinute).charAt(0)));
+      i = 0;
+      for(var x in digit)
+      {
+          if(digit[x] == 1) {
+          context.setSourceRGB(1,1,1);
+          context.arc(radius + arcwidth * 2+ spacing + spacing, i*archeight + radius, radius, 0, 4 * Math.PI);
+          context.fill();
+          context.setSourceRGB(.6,.6,.6);
+          }
+          else {
+            context.arc(radius + arcwidth * 2+ spacing + spacing, i*archeight + radius, radius, 0, 4 * Math.PI);
+            context.fill();
+          }
+          i++;
+      }
       
       
-      context.fill();
+      digit = _getBinary(parseInt(_doubleDigitTime(strMinute).charAt(1)));
+      i = 0;
+      for(var x in digit)
+      {
+          if(digit[x] == 1) {
+          context.setSourceRGB(1,1,1);
+          context.arc(radius + arcwidth * 3+ spacing+ spacing+ spacing, i*archeight + radius, radius, 0, 4 * Math.PI);
+          context.fill();
+          context.setSourceRGB(.6,.6,.6);
+          }
+          else {
+            context.arc(radius + arcwidth * 3+ spacing+ spacing+ spacing, i*archeight + radius, radius, 0, 4 * Math.PI);
+            context.fill();
+          }
+          i++;
+      }
       
       
+      
+       digit = _getBinary(parseInt(_doubleDigitTime(strSeconds).charAt(0)));
+       i = 0;
+        for(var x in digit)
+        {
+            if(digit[x] == 1) {
+            context.setSourceRGB(1,1,1);
+            context.arc(radius + arcwidth * 4+ spacing+ spacing+ spacing+ spacing, (i*archeight) + radius, radius, 0, 4 * Math.PI);
+            context.fill();
+            context.setSourceRGB(.6,.6,.6);
+            }
+            else {
+              context.arc(radius + arcwidth * 4+ spacing+ spacing+ spacing+ spacing, (i*archeight) + radius, radius, 0, 4 * Math.PI);
+              context.fill();
+            }
+            i++;
+        }
+      
+      digit = _getBinary(parseInt(_doubleDigitTime(strSeconds).charAt(1)));
+      i = 0;
+      for(var x in digit)
+      {
+          if(digit[x] == 1) {
+          context.setSourceRGB(1,1,1);
+          context.arc(radius + arcwidth * 5+ spacing+ spacing+ spacing+ spacing+ spacing, (i * archeight) + radius, radius, 0, 4 * Math.PI);
+          context.fill();
+          context.setSourceRGB(.6,.6,.6);
+          }
+          else {
+            context.arc(radius + arcwidth * 5+ spacing+ spacing+ spacing+ spacing+ spacing, (i * archeight) + radius, radius, 0, 4 * Math.PI);
+            context.fill();
+          }
+          i++;
+      }
+      context.$dispose();
 }
 
+
 function init() {
-    button = new St.Bin({     width: 80,
-                              height: 20,
-                              style: 'padding:0;margin:0;' });
-    binaryCalc = new St.DrawingArea({ width: 80,
-                                      height: 32,
-                                      style: 'padding:0;margin:0;/*border: 1px solid #fff;*/' });
-    button.set_child(binaryCalc);
-    binaryCalc.connect('repaint',_repaintevent);
-    
-    
+}
+
+
+function enable() {
     dateMenu = Main.panel.statusArea['dateMenu'];
     if (!dateMenu) {
         log('No dateMenu panel element defined.');
         return;
     }
-}
-
-function enable() {
+    
+    button = new St.Bin({     
+                          width: 80,
+                          height: 20,
+                        });
+                        
+    binaryCalc = new St.DrawingArea({ 
+                                      width: 80,
+                                      height: 32,
+                                    });
+                                    
+    button.set_child(binaryCalc);
+    repaintConnection = binaryCalc.connect('repaint',_repaintevent);
     Main.panel._rightBox.insert_child_at_index(button, 0);
-    if (!dateMenu) {
-        return;
-    }
 
     if (updateClockId != 0) {
         dateMenu._clock.disconnect(updateClockId);
     }
 
-    updateClockId = dateMenu._clock.connect('notify::clock', Lang.bind(dateMenu, _showHello));
+    updateClockId = dateMenu._clock.connect('notify::clock', Lang.bind(dateMenu, _triggerRepaint));
 }
 
 function disable() {
@@ -147,5 +229,10 @@ function disable() {
     if (updateClockId != 0) {
         dateMenu._clock.disconnect(updateClockId);
         updateClockId = 0;
+    }
+    
+    if(repaintConnection != 0) {
+        binaryCalc.disconnect(repaintConnection);
+        repaintConnection = 0;
     }
 }
