@@ -7,7 +7,7 @@ const Lang = imports.lang;
 const Gio = imports.gi.Gio;
 
 
-let button,binaryCalc,dateMenu,updateClockId,tz,date,strHour,strMinute,strSeconds,context,size,width,height,arcwidth,archeight,radius,spacing,repaintConnection,boxlayout,displaySeconds;
+let button,binaryCalc,dateMenu,updateClockId,tz,date,strHour,strMinute,strSeconds,context,size,width,height,arcwidth,archeight,radius,spacing,repaintConnection,boxlayout,displaySeconds, oldClock;
 
 function _triggerRepaint() {
     binaryCalc.queue_repaint()
@@ -219,7 +219,7 @@ function enable() {
                                     
     button.set_child(binaryCalc);
     testlabel = St.Label.new("ex:\t\t");
-    boxlayout.add(testlabel);
+    //boxlayout.add(testlabel);
     boxlayout.add(button);
     repaintConnection = binaryCalc.connect('repaint',_repaintevent);
     //Main.panel._rightBox.insert_child_at_index(button, 0);
@@ -234,7 +234,8 @@ function enable() {
 }
 
 function disable() {
-    Main.panel._rightBox.remove_child(button);
+    //Main.panel._rightBox.remove_child(button);
+    Main.panel.statusArea['dateMenu'].remove_child(boxlayout);
     if (!dateMenu) {
         return;
     }
