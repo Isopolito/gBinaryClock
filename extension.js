@@ -219,7 +219,7 @@ function enable() {
                                     
     button.set_child(binaryCalc);
     testlabel = St.Label.new("ex:\t\t");
-    boxlayout.add(testlabel);
+    //boxlayout.add(testlabel);
     boxlayout.add(button);
     repaintConnection = binaryCalc.connect('repaint',_repaintevent);
     //Main.panel._rightBox.insert_child_at_index(button, 0);
