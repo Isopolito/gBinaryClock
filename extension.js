@@ -4,9 +4,10 @@ const Main = imports.ui.main;
 const Tweener = imports.ui.tweener;
 const GLib = imports.gi.GLib;
 const Lang = imports.lang;
+const Gio = imports.gi.Gio;
 
 
-let button,binaryCalc,dateMenu,updateClockId,tz,date,strHour,strMinute,strSeconds,context,size,width,height,arcwidth,archeight,radius,spacing,repaintConnection;
+let button,binaryCalc,dateMenu,updateClockId,tz,date,strHour,strMinute,strSeconds,context,size,width,height,arcwidth,archeight,radius,spacing,repaintConnection,boxlayout,displaySeconds;
 
 function _triggerRepaint() {
     binaryCalc.queue_repaint()
@@ -150,39 +151,41 @@ function _repaintevent(stdrawingarea,user_data) {
       }
       
       
-      
-       digit = _getBinary(parseInt(_doubleDigitTime(strSeconds).charAt(0)));
-       i = 0;
+      if(displaySeconds) 
+      {
+         digit = _getBinary(parseInt(_doubleDigitTime(strSeconds).charAt(0)));
+         i = 0;
+          for(var x in digit)
+          {
+              if(digit[x] == 1) {
+              context.setSourceRGB(1,1,1);
+              context.arc(radius + arcwidth * 4+ spacing+ spacing+ spacing+ spacing, (i*archeight) + radius, radius, 0, 4 * Math.PI);
+              context.fill();
+              context.setSourceRGB(.6,.6,.6);
+              }
+              else {
+                context.arc(radius + arcwidth * 4+ spacing+ spacing+ spacing+ spacing, (i*archeight) + radius, radius, 0, 4 * Math.PI);
+                context.fill();
+              }
+              i++;
+          }
+        
+        digit = _getBinary(parseInt(_doubleDigitTime(strSeconds).charAt(1)));
+        i = 0;
         for(var x in digit)
         {
             if(digit[x] == 1) {
             context.setSourceRGB(1,1,1);
-            context.arc(radius + arcwidth * 4+ spacing+ spacing+ spacing+ spacing, (i*archeight) + radius, radius, 0, 4 * Math.PI);
+            context.arc(radius + arcwidth * 5+ spacing+ spacing+ spacing+ spacing+ spacing, (i * archeight) + radius, radius, 0, 4 * Math.PI);
             context.fill();
             context.setSourceRGB(.6,.6,.6);
             }
             else {
-              context.arc(radius + arcwidth * 4+ spacing+ spacing+ spacing+ spacing, (i*archeight) + radius, radius, 0, 4 * Math.PI);
+              context.arc(radius + arcwidth * 5+ spacing+ spacing+ spacing+ spacing+ spacing, (i * archeight) + radius, radius, 0, 4 * Math.PI);
               context.fill();
             }
             i++;
         }
-      
-      digit = _getBinary(parseInt(_doubleDigitTime(strSeconds).charAt(1)));
-      i = 0;
-      for(var x in digit)
-      {
-          if(digit[x] == 1) {
-          context.setSourceRGB(1,1,1);
-          context.arc(radius + arcwidth * 5+ spacing+ spacing+ spacing+ spacing+ spacing, (i * archeight) + radius, radius, 0, 4 * Math.PI);
-          context.fill();
-          context.setSourceRGB(.6,.6,.6);
-          }
-          else {
-            context.arc(radius + arcwidth * 5+ spacing+ spacing+ spacing+ spacing+ spacing, (i * archeight) + radius, radius, 0, 4 * Math.PI);
-            context.fill();
-          }
-          i++;
       }
       context.$dispose();
 }
@@ -198,11 +201,16 @@ function enable() {
         log('No dateMenu panel element defined.');
         return;
     }
-    
+    let desktop_settings = new Gio.Settings({ schema: "org.gnome.desktop.interface" });
+    displaySeconds = desktop_settings.get_boolean('clock-show-seconds');
+    //todo: add a boxlayout to this button, and add the date AND the binarycalc drawingarea to that later, so date also shows up.
     button = new St.Bin({     
                           width: 80,
                           height: 20,
                         });
+    
+    boxlayout = new St.BoxLayout();
+    
                         
     binaryCalc = new St.DrawingArea({ 
                                       width: 80,
@@ -210,14 +218,19 @@ function enable() {
                                     });
                                     
     button.set_child(binaryCalc);
+    testlabel = St.Label.new("ex:\t\t");
+    boxlayout.add(testlabel);
+    boxlayout.add(button);
     repaintConnection = binaryCalc.connect('repaint',_repaintevent);
-    Main.panel._rightBox.insert_child_at_index(button, 0);
+    //Main.panel._rightBox.insert_child_at_index(button, 0);
+    Main.panel.statusArea['dateMenu'].insert_child_at_index(boxlayout, 0); //to put in middle 
 
     if (updateClockId != 0) {
         dateMenu._clock.disconnect(updateClockId);
     }
 
     updateClockId = dateMenu._clock.connect('notify::clock', Lang.bind(dateMenu, _triggerRepaint));
+    //updateClockDisplayId = dateMenu._clockDDisplayconnect('notify::clock', Lang.bind(dateMenu. _triggerRepaint));
 }
 
 function disable() {
@@ -230,7 +243,11 @@ function disable() {
         dateMenu._clock.disconnect(updateClockId);
         updateClockId = 0;
     }
-    
+
+    /*if (updateClockDisplayId != 0) {
+        dateMenu._clockDisplay.disconnect(updateClockDisplayId);
+        updateClockDisplayId = 0;
+    }    */
     if(repaintConnection != 0) {
         binaryCalc.disconnect(repaintConnection);
         repaintConnection = 0;
