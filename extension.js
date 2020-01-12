@@ -219,10 +219,14 @@ function enable() {
                                     
     button.set_child(binaryCalc);
     testlabel = St.Label.new("ex:\t\t");
-    //boxlayout.add(testlabel);
+    boxlayout.add(testlabel);
     boxlayout.add(button);
     repaintConnection = binaryCalc.connect('repaint',_repaintevent);
     //Main.panel._rightBox.insert_child_at_index(button, 0);
+    if(!oldClock){
+      oldClock = Main.panel.statusArea['dateMenu'].get_child_at_index(0);
+    }
+    Main.panel.statusArea['dateMenu'].remove_child(oldClock); //to put in middle 
     Main.panel.statusArea['dateMenu'].insert_child_at_index(boxlayout, 0); //to put in middle 
 
     if (updateClockId != 0) {
@@ -236,6 +240,7 @@ function enable() {
 function disable() {
     //Main.panel._rightBox.remove_child(button);
     Main.panel.statusArea['dateMenu'].remove_child(boxlayout);
+    Main.panel.statusArea['dateMenu'].insert_child_at_index(oldClock, 0);
     if (!dateMenu) {
         return;
     }
