@@ -1,3 +1,20 @@
+/*
+    Copyright 2020 Tjipke van der Heide
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+ 
+ 
 const St = imports.gi.St;
 const Clutter = imports.gi.Clutter;
 const Main = imports.ui.main;
@@ -204,41 +221,39 @@ function enable() {
     let desktop_settings = new Gio.Settings({ schema: "org.gnome.desktop.interface" });
     displaySeconds = desktop_settings.get_boolean('clock-show-seconds');
     //todo: add a boxlayout to this button, and add the date AND the binarycalc drawingarea to that later, so date also shows up.
+    if(!button) {
     button = new St.Bin({     
                           width: 80,
                           height: 20,
                         });
-    
+    }
+    if(!boxlayout) {
     boxlayout = new St.BoxLayout();
-    
-                        
+    }
+    if(!binaryCalc){
     binaryCalc = new St.DrawingArea({ 
                                       width: 80,
                                       height: 32,
                                     });
+    }
                                     
     button.set_child(binaryCalc);
-    testlabel = St.Label.new("ex:\t\t");
-    //boxlayout.add(testlabel);
     boxlayout.add(button);
     repaintConnection = binaryCalc.connect('repaint',_repaintevent);
-    //Main.panel._rightBox.insert_child_at_index(button, 0);
     if(!oldClock){
       oldClock = Main.panel.statusArea['dateMenu'].get_child_at_index(0);
     }
-    Main.panel.statusArea['dateMenu'].remove_child(oldClock); //to put in middle 
-    Main.panel.statusArea['dateMenu'].insert_child_at_index(boxlayout, 0); //to put in middle 
+    Main.panel.statusArea['dateMenu'].remove_child(oldClock);
+    Main.panel.statusArea['dateMenu'].insert_child_at_index(boxlayout, 0);
 
     if (updateClockId != 0) {
         dateMenu._clock.disconnect(updateClockId);
     }
 
     updateClockId = dateMenu._clock.connect('notify::clock', Lang.bind(dateMenu, _triggerRepaint));
-    //updateClockDisplayId = dateMenu._clockDDisplayconnect('notify::clock', Lang.bind(dateMenu. _triggerRepaint));
 }
 
 function disable() {
-    //Main.panel._rightBox.remove_child(button);
     Main.panel.statusArea['dateMenu'].remove_child(boxlayout);
     Main.panel.statusArea['dateMenu'].insert_child_at_index(oldClock, 0);
     if (!dateMenu) {
@@ -249,11 +264,7 @@ function disable() {
         dateMenu._clock.disconnect(updateClockId);
         updateClockId = 0;
     }
-
-    /*if (updateClockDisplayId != 0) {
-        dateMenu._clockDisplay.disconnect(updateClockDisplayId);
-        updateClockDisplayId = 0;
-    }    */
+    
     if(repaintConnection != 0) {
         binaryCalc.disconnect(repaintConnection);
         repaintConnection = 0;
