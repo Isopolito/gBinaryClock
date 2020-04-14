@@ -241,10 +241,10 @@ function enable() {
     boxlayout.add(button);
     repaintConnection = binaryCalc.connect('repaint',_repaintevent);
     if(!oldClock){
-      oldClock = Main.panel.statusArea['dateMenu'].get_child_at_index(0);
+      oldClock = Main.panel.statusArea['dateMenu'].actor.get_child_at_index(0);
     }
-    Main.panel.statusArea['dateMenu'].remove_child(oldClock);
-    Main.panel.statusArea['dateMenu'].insert_child_at_index(boxlayout, 0);
+    Main.panel.statusArea['dateMenu'].actor.remove_child(oldClock);
+    Main.panel.statusArea['dateMenu'].actor.insert_child_at_index(boxlayout, 0);
 
     if (updateClockId != 0) {
         dateMenu._clock.disconnect(updateClockId);
@@ -254,8 +254,8 @@ function enable() {
 }
 
 function disable() {
-    Main.panel.statusArea['dateMenu'].remove_child(boxlayout);
-    Main.panel.statusArea['dateMenu'].insert_child_at_index(oldClock, 0);
+    Main.panel.statusArea['dateMenu'].actor.remove_child(boxlayout);
+    Main.panel.statusArea['dateMenu'].actor.insert_child_at_index(oldClock, 0);
     if (!dateMenu) {
         return;
     }
