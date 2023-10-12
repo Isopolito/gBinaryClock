@@ -14,216 +14,220 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import St from 'gi://St';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import GLib from 'gi://GLib';
+import Gio from 'gi://Gio';
 
-const St = imports.gi.St;
-const Main = imports.ui.main;
-const GLib = imports.gi.GLib;
-const Lang = imports.lang;
-const Gio = imports.gi.Gio;
-
-
-let button, bin, binaryCalc, dateMenu, updateClockId, tz, date, strHour, strMinute, strSeconds, context, size, width, height, arcwidth, archeight, radius, spacing, repaintConnection, boxlayout, displaySeconds, oldClock;
-
-function _triggerRepaint() {
-    binaryCalc.queue_repaint()
-}
-
-/* makes sure the number get's a 0 prepended if it's only a single digit */
-function _doubleDigitTime(num) {
-    if (num.toString().length == 1) {
-        return "0" + num.toString()
-    } else {
-        return num.toString()
+export default class Extension {
+    constructor() {
+        this.button = null;
+        this.bin = null;
+        this.binaryCalc = null;
+        this.dateMenu = null;
+        this.updateClockId = null;
     }
-}
 
-/* returns the binary representation of a number */
-function _getBinary(num) {
-    bin = num.toString(2).padStart(4, '0');
-    return {
-        eight: bin[0],
-        four: bin[1],
-        two: bin[2],
-        one: bin[3]
+    _triggerRepaint() {
+        this.binaryCalc.queue_repaint();
     }
-}
 
-/*This should happen on every clock update (and coincidentally on every gnome overview invocation */
-function _repaintevent(stdrawingarea, user_data) {
-
-    tz = dateMenu._clock.get_timezone();
-    date = GLib.DateTime.new_now(tz);
-    strHour = date.get_hour();
-    strMinute = date.get_minute();
-    strSeconds = date.get_second();
-
-    context = stdrawingarea.get_context();
-    size = stdrawingarea.get_surface_size();
-    width = size[0];
-    height = size[1];
-
-    arcwidth = height / 4;
-    archeight = arcwidth;
-    radius = arcwidth / 2;
-    spacing = 5;
-    context.setSourceRGB(.6, .6, .6);
-
-    let digit = _getBinary(parseInt(_doubleDigitTime(strHour).charAt(0)));
-    var i = 0;
-    for (var x in digit) {
-        if (digit[x] == 1) {
-            context.setSourceRGB(1, 1, 1);
-            context.arc(radius, i * archeight + radius, radius, 0, 4 * Math.PI);
-            context.fill();
-            context.setSourceRGB(.6, .6, .6);
+    /* makes sure the number get's a 0 prepended if it's only a single digit */
+    _doubleDigitTime(num) {
+        if (num.toString().length == 1) {
+            return "0" + num.toString();
         } else {
-            context.arc(radius, i * archeight + radius, radius, 0, 4 * Math.PI);
-            context.fill();
+            return num.toString();
         }
-        i++;
     }
 
-    digit = _getBinary(parseInt(_doubleDigitTime(strHour).charAt(1)));
-    i = 0;
-    for (var x in digit) {
-        if (digit[x] == 1) {
-            context.setSourceRGB(1, 1, 1);
-            context.arc(radius + arcwidth + spacing, i * archeight + radius, radius, 0, 4 * Math.PI);
-            context.fill();
-            context.setSourceRGB(.6, .6, .6);
-        } else {
-            context.arc(radius + arcwidth + spacing, i * archeight + radius, radius, 0, 4 * Math.PI);
-            context.fill();
-        }
-        i++;
+    /* returns the binary representation of a number */
+    _getBinary(num) {
+        let bin = num.toString(2).padStart(4, '0');
+        return {
+            eight: bin[0],
+            four: bin[1],
+            two: bin[2],
+            one: bin[3]
+        };
     }
 
-    digit = _getBinary(parseInt(_doubleDigitTime(strMinute).charAt(0)));
-    i = 0;
-    for (var x in digit) {
-        if (digit[x] == 1) {
-            context.setSourceRGB(1, 1, 1);
-            context.arc(radius + arcwidth * 2 + spacing + spacing, i * archeight + radius, radius, 0, 4 * Math.PI);
-            context.fill();
-            context.setSourceRGB(.6, .6, .6);
-        } else {
-            context.arc(radius + arcwidth * 2 + spacing + spacing, i * archeight + radius, radius, 0, 4 * Math.PI);
-            context.fill();
-        }
-        i++;
-    }
+    /*This should happen on every clock update (and coincidentally on every gnome overview invocation */
+    _repaintevent(stdrawingarea, user_data) {
+        let tz = this.dateMenu._clock.get_timezone();
+        let date = GLib.DateTime.new_now(tz);
+        let strHour = date.get_hour();
+        let strMinute = date.get_minute();
+        let strSeconds = date.get_second();
 
+        let context = stdrawingarea.get_context();
+        let size = stdrawingarea.get_surface_size();
+        let width = size[0];
+        let height = size[1];
 
-    digit = _getBinary(parseInt(_doubleDigitTime(strMinute).charAt(1)));
-    i = 0;
-    for (var x in digit) {
-        if (digit[x] == 1) {
-            context.setSourceRGB(1, 1, 1);
-            context.arc(radius + arcwidth * 3 + spacing + spacing + spacing, i * archeight + radius, radius, 0, 4 * Math.PI);
-            context.fill();
-            context.setSourceRGB(.6, .6, .6);
-        } else {
-            context.arc(radius + arcwidth * 3 + spacing + spacing + spacing, i * archeight + radius, radius, 0, 4 * Math.PI);
-            context.fill();
-        }
-        i++;
-    }
+        let arcwidth = height / 4;
+        let archeight = arcwidth;
+        let radius = arcwidth / 2;
+        let spacing = 5;
+        context.setSourceRGB(.6, .6, .6);
 
-
-    if (displaySeconds) {
-        digit = _getBinary(parseInt(_doubleDigitTime(strSeconds).charAt(0)));
-        i = 0;
+        let digit = this._getBinary(parseInt(this._doubleDigitTime(strHour).charAt(0)));
+        var i = 0;
         for (var x in digit) {
             if (digit[x] == 1) {
                 context.setSourceRGB(1, 1, 1);
-                context.arc(radius + arcwidth * 4 + spacing + spacing + spacing + spacing, (i * archeight) + radius, radius, 0, 4 * Math.PI);
+                context.arc(radius, i * archeight + radius, radius, 0, 4 * Math.PI);
                 context.fill();
                 context.setSourceRGB(.6, .6, .6);
             } else {
-                context.arc(radius + arcwidth * 4 + spacing + spacing + spacing + spacing, (i * archeight) + radius, radius, 0, 4 * Math.PI);
+                context.arc(radius, i * archeight + radius, radius, 0, 4 * Math.PI);
                 context.fill();
             }
             i++;
         }
 
-        digit = _getBinary(parseInt(_doubleDigitTime(strSeconds).charAt(1)));
+        digit = this._getBinary(parseInt(this._doubleDigitTime(strHour).charAt(1)));
         i = 0;
         for (var x in digit) {
             if (digit[x] == 1) {
                 context.setSourceRGB(1, 1, 1);
-                context.arc(radius + arcwidth * 5 + spacing + spacing + spacing + spacing + spacing, (i * archeight) + radius, radius, 0, 4 * Math.PI);
+                context.arc(radius + arcwidth + spacing, i * archeight + radius, radius, 0, 4 * Math.PI);
                 context.fill();
                 context.setSourceRGB(.6, .6, .6);
             } else {
-                context.arc(radius + arcwidth * 5 + spacing + spacing + spacing + spacing + spacing, (i * archeight) + radius, radius, 0, 4 * Math.PI);
+                context.arc(radius + arcwidth + spacing, i * archeight + radius, radius, 0, 4 * Math.PI);
                 context.fill();
             }
             i++;
         }
+
+        digit = this._getBinary(parseInt(this._doubleDigitTime(strMinute).charAt(0)));
+        i = 0;
+        for (var x in digit) {
+            if (digit[x] == 1) {
+                context.setSourceRGB(1, 1, 1);
+                context.arc(radius + arcwidth * 2 + spacing + spacing, i * archeight + radius, radius, 0, 4 * Math.PI);
+                context.fill();
+                context.setSourceRGB(.6, .6, .6);
+            } else {
+                context.arc(radius + arcwidth * 2 + spacing + spacing, i * archeight + radius, radius, 0, 4 * Math.PI);
+                context.fill();
+            }
+            i++;
+        }
+
+
+        digit = this._getBinary(parseInt(this._doubleDigitTime(strMinute).charAt(1)));
+        i = 0;
+        for (var x in digit) {
+            if (digit[x] == 1) {
+                context.setSourceRGB(1, 1, 1);
+                context.arc(radius + arcwidth * 3 + spacing + spacing + spacing, i * archeight + radius, radius, 0, 4 * Math.PI);
+                context.fill();
+                context.setSourceRGB(.6, .6, .6);
+            } else {
+                context.arc(radius + arcwidth * 3 + spacing + spacing + spacing, i * archeight + radius, radius, 0, 4 * Math.PI);
+                context.fill();
+            }
+            i++;
+        }
+
+
+        if (displaySeconds) {
+            digit = this._getBinary(parseInt(this._doubleDigitTime(strSeconds).charAt(0)));
+            i = 0;
+            for (var x in digit) {
+                if (digit[x] == 1) {
+                    context.setSourceRGB(1, 1, 1);
+                    context.arc(radius + arcwidth * 4 + spacing + spacing + spacing + spacing, (i * archeight) + radius, radius, 0, 4 * Math.PI);
+                    context.fill();
+                    context.setSourceRGB(.6, .6, .6);
+                } else {
+                    context.arc(radius + arcwidth * 4 + spacing + spacing + spacing + spacing, (i * archeight) + radius, radius, 0, 4 * Math.PI);
+                    context.fill();
+                }
+                i++;
+            }
+
+            digit = this._getBinary(parseInt(this._doubleDigitTime(strSeconds).charAt(1)));
+            i = 0;
+            for (var x in digit) {
+                if (digit[x] == 1) {
+                    context.setSourceRGB(1, 1, 1);
+                    context.arc(radius + arcwidth * 5 + spacing + spacing + spacing + spacing + spacing, (i * archeight) + radius, radius, 0, 4 * Math.PI);
+                    context.fill();
+                    context.setSourceRGB(.6, .6, .6);
+                } else {
+                    context.arc(radius + arcwidth * 5 + spacing + spacing + spacing + spacing + spacing, (i * archeight) + radius, radius, 0, 4 * Math.PI);
+                    context.fill();
+                }
+                i++;
+            }
+        }
+        context.$dispose();
     }
-    context.$dispose();
-}
 
-
-function init() {}
-
-
-function enable() {
-    dateMenu = Main.panel.statusArea['dateMenu'];
-    if (!dateMenu) {
-        log('No dateMenu panel element defined.');
-        return;
+    init() {
     }
-    let desktop_settings = new Gio.Settings({
-        schema: "org.gnome.desktop.interface"
-    });
-    displaySeconds = desktop_settings.get_boolean('clock-show-seconds');
-    if (!button) {
-        button = new St.Bin({
-            width: 80,
-            height: 20,
+
+    enable() {
+        this.dateMenu = Main.panel.statusArea['dateMenu'];
+        if (!this.dateMenu) {
+            log('No dateMenu panel element defined.');
+            return;
+        }
+        let desktop_settings = new Gio.Settings({
+            schema: "org.gnome.desktop.interface"
         });
-    }
-    if (!boxlayout) {
-        boxlayout = new St.BoxLayout();
-    }
-    if (!binaryCalc) {
-        binaryCalc = new St.DrawingArea({
-            width: 80,
-            height: 32,
-        });
+        this.displaySeconds = desktop_settings.get_boolean('clock-show-seconds');
+        if (!this.button) {
+            this.button = new St.Bin({
+                width: 80,
+                height: 20,
+            });
+        }
+        if (!this.boxlayout) {
+            this.boxlayout = new St.BoxLayout();
+        }
+        if (!this.binaryCalc) {
+            this.binaryCalc = new St.DrawingArea({
+                width: 80,
+                height: 32,
+            });
+        }
+
+        this.button.set_child(this.binaryCalc);
+        this.boxlayout.add(this.button);
+        this.repaintConnection = this.binaryCalc.connect('repaint', this._repaintevent.bind(this));
+        if (!this.oldClock) {
+            this.oldClock = Main.panel.statusArea['dateMenu'].get_child_at_index(0);
+        }
+        Main.panel.statusArea['dateMenu'].remove_child(this.oldClock);
+        Main.panel.statusArea['dateMenu'].insert_child_at_index(this.boxlayout, 0);
+
+        if (this.updateClockId !== 0) {
+            this.dateMenu._clock.disconnect(this.updateClockId);
+        }
+
+        this.updateClockId = this.dateMenu._clock.connect('notify::clock', this._triggerRepaint.bind(this));
     }
 
-    button.set_child(binaryCalc);
-    boxlayout.add(button);
-    repaintConnection = binaryCalc.connect('repaint', _repaintevent);
-    if (!oldClock) {
-        oldClock = Main.panel.statusArea['dateMenu'].get_child_at_index(0);
-    }
-    Main.panel.statusArea['dateMenu'].remove_child(oldClock);
-    Main.panel.statusArea['dateMenu'].insert_child_at_index(boxlayout, 0);
+    disable() {
+        Main.panel.statusArea['dateMenu'].remove_child(this.boxlayout);
+        Main.panel.statusArea['dateMenu'].insert_child_at_index(this.oldClock, 0);
+        if (!this.dateMenu) {
+            return;
+        }
 
-    if (updateClockId != 0) {
-        dateMenu._clock.disconnect(updateClockId);
-    }
+        if (this.updateClockId !== 0) {
+            this.dateMenu._clock.disconnect(this.updateClockId);
+            this.updateClockId = 0;
+        }
 
-    updateClockId = dateMenu._clock.connect('notify::clock', Lang.bind(dateMenu, _triggerRepaint));
+        if (this.repaintConnection !== 0) {
+            this.binaryCalc.disconnect(this.repaintConnection);
+            this.repaintConnection = 0;
+        }
+    }
 }
 
-function disable() {
-    Main.panel.statusArea['dateMenu'].remove_child(boxlayout);
-    Main.panel.statusArea['dateMenu'].insert_child_at_index(oldClock, 0);
-    if (!dateMenu) {
-        return;
-    }
-
-    if (updateClockId != 0) {
-        dateMenu._clock.disconnect(updateClockId);
-        updateClockId = 0;
-    }
-
-    if (repaintConnection != 0) {
-        binaryCalc.disconnect(repaintConnection);
-        repaintConnection = 0;
-    }
-}
