@@ -133,7 +133,7 @@ export default class Extension {
         }
 
 
-        if (displaySeconds) {
+        if (this.displaySeconds) {
             digit = this._getBinary(parseInt(this._doubleDigitTime(strSeconds).charAt(0)));
             i = 0;
             for (var x in digit) {
