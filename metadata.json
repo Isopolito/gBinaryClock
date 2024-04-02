@@ -3,9 +3,10 @@
   "description": "adds a binary clock to the gnome bar", 
   "name": "binaryclock", 
   "shell-version": [
-    "45"
+    "45",
+    "46"
   ], 
   "url": "https://github.com/vancha/gnomeShellBinaryClock/", 
   "uuid": "binaryclock@vancha.march", 
-  "version": 5
+  "version": 6
 }
