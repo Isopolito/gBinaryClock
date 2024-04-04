@@ -1,2 +1,4 @@
-# gnomeShellBinaryClock
-An implementation of a binary clock, meant to show up in gnome shells' status bar.
+# gBinaryClock
+An implementation of a binary clock that shows up in the top bar.
+
+forked from [gnomeBinaryClock](https://github.com/vancha/gnomeShellBinaryClock) which is no longer maintained.
