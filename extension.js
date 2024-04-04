@@ -197,7 +197,7 @@ export default class Extension {
         }
 
         this.button.set_child(this.binaryCalc);
-        this.boxlayout.add(this.button);
+        this.boxlayout.add_child(this.button);
         this.repaintConnection = this.binaryCalc.connect('repaint', this._repaintevent.bind(this));
         if (!this.oldClock) {
             this.oldClock = Main.panel.statusArea['dateMenu'].get_child_at_index(0);
