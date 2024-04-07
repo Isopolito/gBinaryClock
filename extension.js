@@ -1,19 +1,3 @@
-/*
-    Copyright 2020 Tjipke van der Heide
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
-
 import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import GLib from 'gi://GLib';
@@ -22,28 +6,48 @@ import Gio from 'gi://Gio';
 export default class Extension {
     constructor() {
         this.button = null;
-        this.bin = null;
         this.binaryCalc = null;
         this.dateMenu = null;
         this.updateClockId = null;
+    }
+
+    /**
+     * Draws a single binary digit on the screen.
+     *
+     * @param {object} context - The context used for drawing.
+     * @param {number} startX - The starting X position for drawing the digit.
+     * @param {number} startY - The starting Y position for drawing the digit.
+     * @param {string} digitChar - The character (digit) to draw in binary.
+     * @param {number} radius - The radius of the circles representing binary bits.
+     * @param {number} arcWidth - The width of each arc, used for spacing calculations.
+     * @param {number} arcHeight - The height of each arc, impacts vertical spacing.
+     * @param {number} spacing - The horizontal spacing between arcs.
+     */
+    _drawBinaryDigit(context, startX, startY, digitChar, radius, arcWidth, arcHeight, spacing) {
+        // Convert the single digit to its binary representation, padded to 4 bits.
+        let binaryRepresentation = this._getBinary(parseInt(digitChar));
+
+        // Iterate over the binary representation.
+        let bitIndex = 0; // Track the bit's position for vertical placement.
+        for (let bit of [binaryRepresentation.eight, binaryRepresentation.four, binaryRepresentation.two, binaryRepresentation.one]) {
+            // Set drawing color based on bit value (1: white, 0: grey).
+            context.setSourceRGB(bit === '1' ? 1 : 0.6, bit === '1' ? 1 : 0.6, bit === '1' ? 1 : 0.6);
+
+            // Draw the circle for the current bit.
+            context.arc(startX, startY + bitIndex * arcHeight + radius, radius, 0, 2 * Math.PI);
+            context.fill();
+
+            bitIndex++; // Move to the next vertical position for the following bit.
+        }
     }
 
     _triggerRepaint() {
         this.binaryCalc.queue_repaint();
     }
 
-    /* makes sure the number gets a 0 prepended if it's only a single digit */
-    _doubleDigitTime(num) {
-        if (num.toString().length === 1) {
-            return "0" + num.toString();
-        } else {
-            return num.toString();
-        }
-    }
-
     /* returns the binary representation of a number */
     _getBinary(num) {
-        let bin = num.toString(2).padStart(4, '0');
+        const bin = num.toString(2).padStart(4, '0');
         return {
             eight: bin[0],
             four: bin[1],
@@ -52,118 +56,50 @@ export default class Extension {
         };
     }
 
-    /*This should happen on every clock update (and coincidentally on every gnome overview invocation */
+    /**
+     * Handles the repainting of the binary clock, drawing each digit of the current time in binary form.
+     *
+     * @param {object} stdrawingarea - The St.DrawingArea widget used for custom drawing.
+     * @param {object} user_data - Additional user data passed to the callback, not used here.
+     */
     _repaintevent(stdrawingarea, user_data) {
+        // Get the current time in the correct timezone.
         let tz = this.dateMenu._clock.get_timezone();
         let date = GLib.DateTime.new_now(tz);
-        let strHour = date.get_hour();
-        let strMinute = date.get_minute();
-        let strSeconds = date.get_second();
+        let strHour = date.get_hour().toString();
+        let strMinute = date.get_minute().toString();
+        let strSeconds = date.get_second().toString();
 
+        // Prepare the drawing context and dimensions.
         let context = stdrawingarea.get_context();
-        let size = stdrawingarea.get_surface_size();
-        let width = size[0];
-        let height = size[1];
+        let [width, height] = stdrawingarea.get_surface_size();
 
-        let arcwidth = height / 4;
-        let archeight = arcwidth;
-        let radius = arcwidth / 2;
+        // Define drawing parameters.
+        let arcWidth = height / 4;
+        let arcHeight = arcWidth;
+        let radius = arcWidth / 2;
         let spacing = 5;
-        context.setSourceRGB(.6, .6, .6);
 
-        let digit = this._getBinary(parseInt(this._doubleDigitTime(strHour).charAt(0)));
-        var i = 0;
-        for (var x in digit) {
-            if (digit[x] == 1) {
-                context.setSourceRGB(1, 1, 1);
-                context.arc(radius, i * archeight + radius, radius, 0, 4 * Math.PI);
-                context.fill();
-                context.setSourceRGB(.6, .6, .6);
-            } else {
-                context.arc(radius, i * archeight + radius, radius, 0, 4 * Math.PI);
-                context.fill();
-            }
-            i++;
-        }
+        // Draw each part of the time.
+        // Hours: tens place
+        this._drawBinaryDigit(context, radius, 0, strHour.padStart(2, '0').charAt(0), radius, arcWidth, arcHeight, spacing);
+        // Hours: ones place - Increase the `startX` position to account for the previous digit and spacing.
+        this._drawBinaryDigit(context, radius * 3 + spacing, 0, strHour.padStart(2, '0').charAt(1), radius, arcWidth, arcHeight, spacing);
 
-        digit = this._getBinary(parseInt(this._doubleDigitTime(strHour).charAt(1)));
-        i = 0;
-        for (var x in digit) {
-            if (digit[x] == 1) {
-                context.setSourceRGB(1, 1, 1);
-                context.arc(radius + arcwidth + spacing, i * archeight + radius, radius, 0, 4 * Math.PI);
-                context.fill();
-                context.setSourceRGB(.6, .6, .6);
-            } else {
-                context.arc(radius + arcwidth + spacing, i * archeight + radius, radius, 0, 4 * Math.PI);
-                context.fill();
-            }
-            i++;
-        }
+        // Minutes: tens place - Further increase the `startX` position similarly.
+        this._drawBinaryDigit(context, radius * 5 + spacing * 2, 0, strMinute.padStart(2, '0').charAt(0), radius, arcWidth, arcHeight, spacing);
+        // Minutes: ones place
+        this._drawBinaryDigit(context, radius * 7 + spacing * 3, 0, strMinute.padStart(2, '0').charAt(1), radius, arcWidth, arcHeight, spacing);
 
-        digit = this._getBinary(parseInt(this._doubleDigitTime(strMinute).charAt(0)));
-        i = 0;
-        for (var x in digit) {
-            if (digit[x] == 1) {
-                context.setSourceRGB(1, 1, 1);
-                context.arc(radius + arcwidth * 2 + spacing + spacing, i * archeight + radius, radius, 0, 4 * Math.PI);
-                context.fill();
-                context.setSourceRGB(.6, .6, .6);
-            } else {
-                context.arc(radius + arcwidth * 2 + spacing + spacing, i * archeight + radius, radius, 0, 4 * Math.PI);
-                context.fill();
-            }
-            i++;
-        }
-
-
-        digit = this._getBinary(parseInt(this._doubleDigitTime(strMinute).charAt(1)));
-        i = 0;
-        for (var x in digit) {
-            if (digit[x] == 1) {
-                context.setSourceRGB(1, 1, 1);
-                context.arc(radius + arcwidth * 3 + spacing + spacing + spacing, i * archeight + radius, radius, 0, 4 * Math.PI);
-                context.fill();
-                context.setSourceRGB(.6, .6, .6);
-            } else {
-                context.arc(radius + arcwidth * 3 + spacing + spacing + spacing, i * archeight + radius, radius, 0, 4 * Math.PI);
-                context.fill();
-            }
-            i++;
-        }
-
-
+        // Optionally draw seconds if enabled, continuing to increase `startX` position.
         if (this.displaySeconds) {
-            digit = this._getBinary(parseInt(this._doubleDigitTime(strSeconds).charAt(0)));
-            i = 0;
-            for (var x in digit) {
-                if (digit[x] == 1) {
-                    context.setSourceRGB(1, 1, 1);
-                    context.arc(radius + arcwidth * 4 + spacing + spacing + spacing + spacing, (i * archeight) + radius, radius, 0, 4 * Math.PI);
-                    context.fill();
-                    context.setSourceRGB(.6, .6, .6);
-                } else {
-                    context.arc(radius + arcwidth * 4 + spacing + spacing + spacing + spacing, (i * archeight) + radius, radius, 0, 4 * Math.PI);
-                    context.fill();
-                }
-                i++;
-            }
-
-            digit = this._getBinary(parseInt(this._doubleDigitTime(strSeconds).charAt(1)));
-            i = 0;
-            for (var x in digit) {
-                if (digit[x] == 1) {
-                    context.setSourceRGB(1, 1, 1);
-                    context.arc(radius + arcwidth * 5 + spacing + spacing + spacing + spacing + spacing, (i * archeight) + radius, radius, 0, 4 * Math.PI);
-                    context.fill();
-                    context.setSourceRGB(.6, .6, .6);
-                } else {
-                    context.arc(radius + arcwidth * 5 + spacing + spacing + spacing + spacing + spacing, (i * archeight) + radius, radius, 0, 4 * Math.PI);
-                    context.fill();
-                }
-                i++;
-            }
+            // Seconds: tens place
+            this._drawBinaryDigit(context, radius * 9 + spacing * 4, 0, strSeconds.padStart(2, '0').charAt(0), radius, arcWidth, arcHeight, spacing);
+            // Seconds: ones place
+            this._drawBinaryDigit(context, radius * 11 + spacing * 5, 0, strSeconds.padStart(2, '0').charAt(1), radius, arcWidth, arcHeight, spacing);
         }
+
+        // Clean up the context once drawing is complete.
         context.$dispose();
     }
 
@@ -173,7 +109,7 @@ export default class Extension {
     enable() {
         this.dateMenu = Main.panel.statusArea['dateMenu'];
         if (!this.dateMenu) {
-            log('No dateMenu panel element defined.');
+            log('gBinaryClock: No dateMenu panel element defined.');
             return;
         }
         let desktop_settings = new Gio.Settings({
@@ -230,4 +166,3 @@ export default class Extension {
         }
     }
 }
-
