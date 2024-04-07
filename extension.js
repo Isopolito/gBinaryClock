@@ -151,9 +151,6 @@ export default class Extension {
     disable() {
         Main.panel.statusArea['dateMenu'].remove_child(this.boxlayout);
         Main.panel.statusArea['dateMenu'].insert_child_at_index(this.oldClock, 0);
-        if (!this.dateMenu) {
-            return;
-        }
 
         if (this.updateClockId !== 0) {
             this.dateMenu._clock.disconnect(this.updateClockId);
@@ -164,5 +161,10 @@ export default class Extension {
             this.binaryCalc.disconnect(this.repaintConnection);
             this.repaintConnection = 0;
         }
+
+        this.button = null;
+        this.binaryCalc = null;
+        this.dateMenu = null;
+        this.updateClockId = null;
     }
 }
