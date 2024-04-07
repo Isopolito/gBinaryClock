@@ -32,9 +32,9 @@ export default class Extension {
         this.binaryCalc.queue_repaint();
     }
 
-    /* makes sure the number get's a 0 prepended if it's only a single digit */
+    /* makes sure the number gets a 0 prepended if it's only a single digit */
     _doubleDigitTime(num) {
-        if (num.toString().length == 1) {
+        if (num.toString().length === 1) {
             return "0" + num.toString();
         } else {
             return num.toString();
