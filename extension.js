@@ -103,9 +103,6 @@ export default class Extension {
         context.$dispose();
     }
 
-    init() {
-    }
-
     enable() {
         this.dateMenu = Main.panel.statusArea['dateMenu'];
         if (!this.dateMenu) {
