@@ -31,7 +31,9 @@ export default class Extension {
         let bitIndex = 0; // Track the bit's position for vertical placement.
         for (let bit of [binaryRepresentation.eight, binaryRepresentation.four, binaryRepresentation.two, binaryRepresentation.one]) {
             // Set drawing color based on bit value (1: white, 0: grey).
-            context.setSourceRGB(bit === '1' ? 1 : 0.6, bit === '1' ? 1 : 0.6, bit === '1' ? 1 : 0.6);
+            const light = 1;
+            const dark = 0.4;
+            context.setSourceRGB(bit === '1' ? light : dark, bit === '1' ? light : dark, bit === '1' ? light : dark);
 
             // Draw the circle for the current bit.
             context.arc(startX, startY + bitIndex * arcHeight + radius, radius, 0, 2 * Math.PI);
@@ -74,6 +76,11 @@ export default class Extension {
         let context = stdrawingarea.get_context();
         let [width, height] = stdrawingarea.get_surface_size();
 
+        //for debugging to find the background size
+        // context.setSourceRGB(1,0,0);
+        // context.arc(0, 200, 200, 0, 2 * Math.PI);
+        // context.fill();
+
         // Define drawing parameters.
         let arcWidth = height / 4;
         let arcHeight = arcWidth;
@@ -113,9 +120,10 @@ export default class Extension {
             schema: "org.gnome.desktop.interface"
         });
         this.displaySeconds = desktop_settings.get_boolean('clock-show-seconds');
+        const w = this.displaySeconds ? 69 : 44;
         if (!this.button) {
             this.button = new St.Bin({
-                width: 80,
+                width: w,
                 height: 20,
             });
         }
@@ -124,7 +132,7 @@ export default class Extension {
         }
         if (!this.binaryCalc) {
             this.binaryCalc = new St.DrawingArea({
-                width: 80,
+                width: w,
                 height: 32,
             });
         }
