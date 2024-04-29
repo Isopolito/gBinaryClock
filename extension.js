@@ -76,11 +76,6 @@ export default class Extension {
         let context = stdrawingarea.get_context();
         let [width, height] = stdrawingarea.get_surface_size();
 
-        //for debugging to find the background size
-        // context.setSourceRGB(1,0,0);
-        // context.arc(50, 100, 200, 0, 2 * Math.PI);
-        // context.fill();
-
         // Define drawing parameters.
         let arcWidth = height / 4;
         let arcHeight = arcWidth;
