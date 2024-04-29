@@ -31,7 +31,9 @@ export default class Extension {
         let bitIndex = 0; // Track the bit's position for vertical placement.
         for (let bit of [binaryRepresentation.eight, binaryRepresentation.four, binaryRepresentation.two, binaryRepresentation.one]) {
             // Set drawing color based on bit value (1: white, 0: grey).
-            context.setSourceRGB(bit === '1' ? 1 : 0.6, bit === '1' ? 1 : 0.6, bit === '1' ? 1 : 0.6);
+            const light = 1;
+            const dark = 0.4;
+            context.setSourceRGB(bit === '1' ? light : dark, bit === '1' ? light : dark, bit === '1' ? light : dark);
 
             // Draw the circle for the current bit.
             context.arc(startX, startY + bitIndex * arcHeight + radius, radius, 0, 2 * Math.PI);
@@ -74,29 +76,40 @@ export default class Extension {
         let context = stdrawingarea.get_context();
         let [width, height] = stdrawingarea.get_surface_size();
 
+        //for debugging to find the background size
+        // context.setSourceRGB(1,0,0);
+        // context.arc(50, 100, 200, 0, 2 * Math.PI);
+        // context.fill();
+
         // Define drawing parameters.
         let arcWidth = height / 4;
         let arcHeight = arcWidth;
         let radius = arcWidth / 2;
         let spacing = 5;
 
+        let total_draw_width = radius * 8 + spacing * 3;
+        if (this.displaySeconds) {
+            total_draw_width = radius * 12 + spacing * 5;
+        }
+        let left_spacing = (width - total_draw_width)/2;
+
         // Draw each part of the time.
         // Hours: tens place
-        this._drawBinaryDigit(context, radius, 0, strHour.padStart(2, '0').charAt(0), radius, arcWidth, arcHeight, spacing);
+        this._drawBinaryDigit(context, left_spacing + radius, 0, strHour.padStart(2, '0').charAt(0), radius, arcWidth, arcHeight, spacing);
         // Hours: ones place - Increase the `startX` position to account for the previous digit and spacing.
-        this._drawBinaryDigit(context, radius * 3 + spacing, 0, strHour.padStart(2, '0').charAt(1), radius, arcWidth, arcHeight, spacing);
+        this._drawBinaryDigit(context, left_spacing + radius * 3 + spacing, 0, strHour.padStart(2, '0').charAt(1), radius, arcWidth, arcHeight, spacing);
 
         // Minutes: tens place - Further increase the `startX` position similarly.
-        this._drawBinaryDigit(context, radius * 5 + spacing * 2, 0, strMinute.padStart(2, '0').charAt(0), radius, arcWidth, arcHeight, spacing);
+        this._drawBinaryDigit(context, left_spacing + radius * 5 + spacing * 2, 0, strMinute.padStart(2, '0').charAt(0), radius, arcWidth, arcHeight, spacing);
         // Minutes: ones place
-        this._drawBinaryDigit(context, radius * 7 + spacing * 3, 0, strMinute.padStart(2, '0').charAt(1), radius, arcWidth, arcHeight, spacing);
+        this._drawBinaryDigit(context, left_spacing + radius * 7 + spacing * 3, 0, strMinute.padStart(2, '0').charAt(1), radius, arcWidth, arcHeight, spacing);
 
         // Optionally draw seconds if enabled, continuing to increase `startX` position.
         if (this.displaySeconds) {
             // Seconds: tens place
-            this._drawBinaryDigit(context, radius * 9 + spacing * 4, 0, strSeconds.padStart(2, '0').charAt(0), radius, arcWidth, arcHeight, spacing);
+            this._drawBinaryDigit(context, left_spacing + radius * 9 + spacing * 4, 0, strSeconds.padStart(2, '0').charAt(0), radius, arcWidth, arcHeight, spacing);
             // Seconds: ones place
-            this._drawBinaryDigit(context, radius * 11 + spacing * 5, 0, strSeconds.padStart(2, '0').charAt(1), radius, arcWidth, arcHeight, spacing);
+            this._drawBinaryDigit(context, left_spacing + radius * 11 + spacing * 5, 0, strSeconds.padStart(2, '0').charAt(1), radius, arcWidth, arcHeight, spacing);
         }
 
         // Clean up the context once drawing is complete.
@@ -115,7 +128,7 @@ export default class Extension {
         this.displaySeconds = desktop_settings.get_boolean('clock-show-seconds');
         if (!this.button) {
             this.button = new St.Bin({
-                width: 80,
+                width: 100,
                 height: 20,
             });
         }
@@ -124,7 +137,7 @@ export default class Extension {
         }
         if (!this.binaryCalc) {
             this.binaryCalc = new St.DrawingArea({
-                width: 80,
+                width: 100,
                 height: 32,
             });
         }
@@ -146,6 +159,8 @@ export default class Extension {
     }
 
     disable() {
+        this.button.remove_child(this.binaryCalc);
+        this.boxlayout.remove_child(this.button);
         Main.panel.statusArea['dateMenu'].remove_child(this.boxlayout);
         Main.panel.statusArea['dateMenu'].insert_child_at_index(this.oldClock, 0);
 
