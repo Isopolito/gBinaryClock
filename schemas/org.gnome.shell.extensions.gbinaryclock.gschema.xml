@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.gbinaryclock"
+          path="/org/gnome/shell/extensions/gbinaryclock/">
+    <key name="display-seconds" type="b">
+      <default>false</default>
+      <summary>Display seconds in the binary clock</summary>
+      <description>
+        Controls whether the binary clock renders seconds in addition to hours
+        and minutes.
+      </description>
+    </key>
+  </schema>
+</schemalist>
