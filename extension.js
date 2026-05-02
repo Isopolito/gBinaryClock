@@ -6,9 +6,13 @@ import Gio from 'gi://Gio';
 export default class Extension {
     constructor() {
         this.button = null;
+        this.boxlayout = null;
         this.binaryCalc = null;
         this.dateMenu = null;
+        this.oldClock = null;
+        this.repaintConnection = null;
         this.updateClockId = null;
+        this.displaySeconds = false;
     }
 
     /**
@@ -44,7 +48,7 @@ export default class Extension {
     }
 
     _triggerRepaint() {
-        this.binaryCalc.queue_repaint();
+        if (this.binaryCalc) this.binaryCalc.queue_repaint();
     }
 
     /* returns the binary representation of a number */
@@ -83,9 +87,7 @@ export default class Extension {
         let spacing = 5;
 
         let total_draw_width = radius * 8 + spacing * 3;
-        if (this.displaySeconds) {
-            total_draw_width = radius * 12 + spacing * 5;
-        }
+        if (this.displaySeconds) total_draw_width = radius * 12 + spacing * 5;
         let left_spacing = (width - total_draw_width)/2;
 
         // Draw each part of the time.
@@ -146,33 +148,55 @@ export default class Extension {
         Main.panel.statusArea['dateMenu'].remove_child(this.oldClock);
         Main.panel.statusArea['dateMenu'].insert_child_at_index(this.boxlayout, 0);
 
-        if (this.updateClockId !== 0) {
+        if (this.updateClockId !== null) {
             this.dateMenu._clock.disconnect(this.updateClockId);
+            this.updateClockId = null;
         }
 
         this.updateClockId = this.dateMenu._clock.connect('notify::clock', this._triggerRepaint.bind(this));
     }
 
     disable() {
-        if (this.button !== null) this.button.remove_child(this.binaryCalc);
-        if (this.boxlayout !== null) this.boxlayout.remove_child(this.button);
+        if (!this.dateMenu) return;
 
-        Main.panel.statusArea['dateMenu'].remove_child(this.boxlayout);
-        Main.panel.statusArea['dateMenu'].insert_child_at_index(this.oldClock, 0);
-
-        if (this.updateClockId !== 0) {
+        if (this.updateClockId !== null) {
             this.dateMenu._clock.disconnect(this.updateClockId);
-            this.updateClockId = 0;
+            this.updateClockId = null;
         }
 
-        if (this.repaintConnection !== 0) {
+        if (this.repaintConnection !== null && this.binaryCalc) {
             this.binaryCalc.disconnect(this.repaintConnection);
-            this.repaintConnection = 0;
+            this.repaintConnection = null;
         }
 
-        this.button = null;
-        this.binaryCalc = null;
+        if (this.boxlayout?.get_parent() === this.dateMenu) {
+            this.dateMenu.remove_child(this.boxlayout);
+        }
+        if (this.oldClock && this.oldClock.get_parent() !== this.dateMenu) {
+            this.dateMenu.insert_child_at_index(this.oldClock, 0);
+        }
+
+        if (this.button && this.binaryCalc?.get_parent() === this.button) this.button.remove_child(this.binaryCalc);
+        if (this.boxlayout && this.button?.get_parent() === this.boxlayout) this.boxlayout.remove_child(this.button);
+
+        if (this.binaryCalc) {
+            this.binaryCalc.destroy();
+            this.binaryCalc = null;
+        }
+
+        if (this.button) {
+            this.button.destroy();
+            this.button = null;
+        }
+
+        if (this.boxlayout) {
+            this.boxlayout.destroy();
+            this.boxlayout = null;
+        }
+
         this.dateMenu = null;
+        this.oldClock = null;
+        this.repaintConnection = null;
         this.updateClockId = null;
     }
 }
