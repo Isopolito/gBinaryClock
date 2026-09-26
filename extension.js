@@ -10,6 +10,8 @@ export default class Extension {
         this.binaryCalc = null;
         this.dateMenu = null;
         this.oldClock = null;
+        this.clockBox = null;
+        this.clockIndex = null;
         this.repaintConnection = null;
         this.updateClockId = null;
         this.displaySeconds = false;
@@ -142,11 +144,11 @@ export default class Extension {
         this.button.set_child(this.binaryCalc);
         this.boxlayout.add_child(this.button);
         this.repaintConnection = this.binaryCalc.connect('repaint', this._repaintevent.bind(this));
-        if (!this.oldClock) {
-            this.oldClock = Main.panel.statusArea['dateMenu'].get_child_at_index(0);
-        }
-        Main.panel.statusArea['dateMenu'].remove_child(this.oldClock);
-        Main.panel.statusArea['dateMenu'].insert_child_at_index(this.boxlayout, 0);
+        this.oldClock = this.dateMenu._clockDisplay;
+        this.clockBox = this.oldClock.get_parent();
+        this.clockIndex = this.clockBox.get_children().indexOf(this.oldClock);
+        this.clockBox.remove_child(this.oldClock);
+        this.clockBox.insert_child_at_index(this.boxlayout, this.clockIndex);
 
         if (this.updateClockId !== null) {
             this.dateMenu._clock.disconnect(this.updateClockId);
@@ -159,6 +161,10 @@ export default class Extension {
     disable() {
         if (!this.dateMenu) return;
 
+        const replacementIndex = this.boxlayout?.get_parent() === this.clockBox
+            ? this.clockBox.get_children().indexOf(this.boxlayout)
+            : this.clockIndex;
+
         if (this.updateClockId !== null) {
             this.dateMenu._clock.disconnect(this.updateClockId);
             this.updateClockId = null;
@@ -169,11 +175,11 @@ export default class Extension {
             this.repaintConnection = null;
         }
 
-        if (this.boxlayout?.get_parent() === this.dateMenu) {
-            this.dateMenu.remove_child(this.boxlayout);
+        if (this.boxlayout?.get_parent() === this.clockBox) {
+            this.clockBox.remove_child(this.boxlayout);
         }
-        if (this.oldClock && this.oldClock.get_parent() !== this.dateMenu) {
-            this.dateMenu.insert_child_at_index(this.oldClock, 0);
+        if (this.oldClock && this.oldClock.get_parent() !== this.clockBox) {
+            this.clockBox.insert_child_at_index(this.oldClock, replacementIndex);
         }
 
         if (this.button && this.binaryCalc?.get_parent() === this.button) this.button.remove_child(this.binaryCalc);
@@ -196,6 +202,8 @@ export default class Extension {
 
         this.dateMenu = null;
         this.oldClock = null;
+        this.clockBox = null;
+        this.clockIndex = null;
         this.repaintConnection = null;
         this.updateClockId = null;
     }
